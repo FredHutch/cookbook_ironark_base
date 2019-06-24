@@ -20,6 +20,32 @@ sudo node['ironark']['user']['name'] do
   nopasswd true
 end
 
+# Set up SSH config with deploy key for repositories
+directory 'ironark user ssh directory' do
+  path "#{node['ironark']['user']['home']}/.ssh"
+  mode '0700'
+  owner node['ironark']['user']['name']
+end
+
+file "#{node['ironark']['user']['home']}/.ssh/deploy" do
+  content data_bag_item('keys', 'deploy_key')['private']
+  owner node['ironark']['user']['name']
+  mode '0600'
+end
+
+file "#{node['ironark']['user']['home']}/.ssh/deploy.pub" do
+  content data_bag_item('keys', 'deploy_key')['public']
+  owner node['ironark']['user']['name']
+  mode '0600'
+end
+
+# This file configures ssh to use the deploy key for github
+cookbook_file "#{node['ironark']['user']['home']}/.ssh/config" do
+  source 'user_ssh_config'
+  owner node['ironark']['user']['name']
+  mode '0600'
+end
+
 node['scicomp_essentials']['repositories'].each do |r|
   apt_repository r['name'] do
     uri          r['uri']
